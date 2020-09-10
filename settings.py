@@ -7,5 +7,5 @@ STATUS = "ON"
 # Email Settings:
 SENDER_EMAIL = "Shoval.richback@gmail.com"
 SENDER_PASSWORD = "ywspysmrbmwsehce"
-RECEIVER_EMAIL = "Shoval.richback@gmail.com,shovallevi.w@gmail.com"
+RECEIVER_EMAIL = "Shoval.richback@gmail.com,2100.sup@gmail.com"
 # TODO send to multiple receivers
