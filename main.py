@@ -15,6 +15,7 @@ import logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.DEBUG)
 
+
 def send_error_email(text, error_data):
     try:
         port = 465  # For SSL
@@ -41,6 +42,7 @@ def send_error_email(text, error_data):
     except Exception as e:
         logger.warning(f'Unable to send error email - {e.args}')
         exit(0)
+
 
 class Request:
     def __init__(self):
@@ -86,19 +88,32 @@ class Request:
             logger.warning(f'Unable to add subscribers - {e.args}')
             exit(0)
 
-    def deleteSubscribers(self, subscribers):
+    # def deleteSubscribers(self, subscribers):
+    #     try:
+    #         url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
+    #         r = requests.delete(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
+    #         data = r.json()
+    #         return data
+    #
+    #     except Exception as e:
+    #         send_error_email('Fail to delete subscribers', e.args)
+    #         logger.warning(f'Unable to delete subscribers - {e.args}')
+    #         exit(0)
+
+    def updateSubscribers(self, subscribers):
         try:
             url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
-            r = requests.delete(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
+            # r = requests.delete(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
+            r = requests.put(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
             data = r.json()
             return data
 
         except Exception as e:
-            send_error_email('Fail to delete subscribers', e.args)
-            logger.warning(f'Unable to delete subscribers - {e.args}')
+            send_error_email('Fail to update subscribers', e.args)
+            logger.warning(f'Unable to update subscribers - {e.args}')
             exit(0)
 
-Request().getSubscribers()
+
 def moveSubscribers():
     try:
         new_subs = Request().getSubscribers()
@@ -108,16 +123,16 @@ def moveSubscribers():
             exit(0)
 
         new_subs_json = []
-        to_delete = []
+        to_block = []
         for sub in new_subs:
-            if sub['STATUS'] == '1': # TODO check witch status is relevant
+            if sub['STATUS'] == '1':  # TODO check witch status is relevant
                 sub_dict = {
                     "NAME": sub['NAME'],
                     "EMAIL": sub['EMAIL'],
-                    "PHONE": sub['PHONE']
+                    "PHONE": sub['PHONE'],
                 }
                 new_subs_json.append(sub_dict)
-                to_delete.append({"ID": sub['ID']})
+                to_block.append({"IDENTIFIER": sub['ID'], "STATUS": 0, "STATUS_NUM": 1})
 
         added_subs = Request().addSubscribers(new_subs_json)
         if len(new_subs_json) != len(added_subs["SUBSCRIBERS_CREATED"]) + len(added_subs["EMAILS_EXISTING"]):
@@ -126,20 +141,18 @@ def moveSubscribers():
             exit(0)
 
         else:
-            deleted_subs = Request().deleteSubscribers(to_delete)
-            if len(deleted_subs["DELETED_SUBSCRIBERS"]) != len(to_delete):
-                data = deleted_subs
+            # TODO change delete to block
+            blocked_subs = Request().updateSubscribers(to_block)
+            if len(blocked_subs["DELETED_SUBSCRIBERS"]) != len(to_block):
+                data = blocked_subs
                 send_error_email('Fail to delete all subscribers.', data)
                 exit(0)
 
     except Exception as e:
         send_error_email('Error in move subscribers', e.args)
-        logger.warning(f'Unable to delete subscribers - {e.args}')
+        logger.warning(f'Unable to move subscribers - {e.args}')
         exit(0)
 
-
-
-# send_error_email('טקסט','שגיאה')
 
 # moveSubscribers()
 
@@ -148,6 +161,5 @@ schedule.every().sunday.at(MOVING_TIME).do(moveSubscribers)
 while True:
     if STATUS == "ON":
         schedule.run_pending()
-        print('sdfsdf')
+        print("דגלק")
     time.sleep(60)
-
