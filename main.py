@@ -161,5 +161,4 @@ schedule.every().sunday.at(MOVING_TIME).do(moveSubscribers)
 while True:
     if STATUS == "ON":
         schedule.run_pending()
-        print("דגלק")
     time.sleep(60)
