@@ -2,7 +2,7 @@
 # WAITING_LIST_ID = "777555" # רשימת בדיקות
 WAITING_LIST_ID = "807183" # רשימת המתנה פסטיבל
 ACTIVE_LIST_ID = "810009" # רשימה ראשית פסטיבל
-MOVING_TIME = "05:00"
+MOVING_TIME = "02:00"
 STATUS = "ON"
 
 # Email Settings:

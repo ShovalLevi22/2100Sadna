@@ -124,7 +124,7 @@ def moveSubscribers():
         new_subs_json = []
         to_block = []
         for sub in new_subs:
-            if sub['STATUS'] == '1':  # TODO check witch status is relevant
+            if sub['STATUS'] == '1':
                 sub_dict = {
                     "NAME": sub['NAME'],
                     "EMAIL": sub['EMAIL'],
