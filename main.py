@@ -103,7 +103,6 @@ class Request:
     def updateSubscribers(self, subscribers):
         try:
             url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
-            # r = requests.delete(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
             r = requests.put(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
             data = r.json()
             return data
@@ -135,18 +134,20 @@ def moveSubscribers():
                 to_block.append({"IDENTIFIER": sub['ID'], "STATUS": 0, "STATUS_NUM": 1})
 
         added_subs = Request().addSubscribers(new_subs_json)
-        if len(new_subs_json) != len(added_subs["SUBSCRIBERS_CREATED"]) + len(added_subs["EMAILS_EXISTING"]):
-            data = added_subs
-            send_error_email('Fail to add all subscribers.', data)
+
+        if len(new_subs_json) == 0:
+            send_error_email('No subscriber was added', added_subs)
+            logger.warning(f'No subscriber was added. - {added_subs}')
             exit(0)
 
+        elif len(new_subs_json) > len(added_subs["SUBSCRIBERS_CREATED"]):
+            logger.info(f'Not all subscribers were added. - {added_subs}')
+
         else:
-            # TODO change delete to block
             blocked_subs = Request().updateSubscribers(to_block)
-            if len(blocked_subs["DELETED_SUBSCRIBERS"]) != len(to_block):
-                data = blocked_subs
-                send_error_email('Fail to delete all subscribers.', data)
-                exit(0)
+            if len(blocked_subs["SUBSCRIBERS_UPDATED"]) != len(to_block):
+                send_error_email('Fail to block all subscribers.', blocked_subs)
+                logger.info(f'Fail to block all subscribers - {blocked_subs}')
 
     except Exception as e:
         send_error_email('Error in move subscribers', e.args)
