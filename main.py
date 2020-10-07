@@ -46,7 +46,7 @@ def send_error_email(text, error_data):
 
 class Request:
     def __init__(self):
-        self.header = self.authorization()
+        # self.header = self.authorization()
         self.params = None
         self.URL = "http://api.responder.co.il/main/lists/"
 
@@ -66,10 +66,17 @@ class Request:
 
     def getSubscribers(self):
         try:
-            url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
-            r = requests.get(url=url, headers=self.header)
-            data = r.json()
-            return data
+            full_data = []
+            data = [1]  # TODO find another solution
+            offset = 0
+            while len(data) > 0:
+                url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
+                r = requests.get(url=url, headers= self.authorization(), params={'offset': offset})
+                data = r.json()
+                offset += len(data)
+                full_data.extend(data)
+
+            return full_data
 
         except Exception as e:
             send_error_email('Fail to get subscribers', e.args)
@@ -79,38 +86,16 @@ class Request:
     def addSubscribers(self, subscribers):
         try:
             url = f'{self.URL}{ACTIVE_LIST_ID}/subscribers'
-            r = requests.post(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
-            data = r.json()
-            return data
+            chunks = [subscribers[x:x + 50] for x in range(0, len(subscribers), 50)]
+
+            for chunk in chunks:
+                r = requests.post(url=url, headers= self.authorization(), params={'subscribers': json.dumps(chunk)})
+                data = r.json()
+                return data
 
         except Exception as e:
             send_error_email('Fail to add subscribers', e.args)
             logger.warning(f'Unable to add subscribers - {e.args}')
-            exit(0)
-
-    # def deleteSubscribers(self, subscribers):
-    #     try:
-    #         url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
-    #         r = requests.delete(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
-    #         data = r.json()
-    #         return data
-    #
-    #     except Exception as e:
-    #         send_error_email('Fail to delete subscribers', e.args)
-    #         logger.warning(f'Unable to delete subscribers - {e.args}')
-    #         exit(0)
-
-    def updateSubscribers(self, subscribers):
-        try:
-            url = f'{self.URL}{WAITING_LIST_ID}/subscribers'
-            r = requests.put(url=url, headers=self.header, params={'subscribers': json.dumps(subscribers)})
-            data = r.json()
-            return data
-
-        except Exception as e:
-            send_error_email('Fail to update subscribers', e.args)
-            logger.warning(f'Unable to update subscribers - {e.args}')
-            exit(0)
 
 
 def moveSubscribers():
@@ -122,7 +107,7 @@ def moveSubscribers():
             exit(0)
 
         new_subs_json = []
-        to_block = []
+        # to_block = []
         for sub in new_subs:
             if sub['STATUS'] == '1':
                 sub_dict = {
@@ -131,7 +116,7 @@ def moveSubscribers():
                     "PHONE": sub['PHONE'],
                 }
                 new_subs_json.append(sub_dict)
-                to_block.append({"IDENTIFIER": sub['ID'], "STATUS": 0, "STATUS_NUM": 1})
+                # to_block.append({"IDENTIFIER": sub['ID'], "STATUS": 0, "STATUS_NUM": 1})
 
         added_subs = Request().addSubscribers(new_subs_json)
 
@@ -143,11 +128,11 @@ def moveSubscribers():
         elif len(new_subs_json) > len(added_subs["SUBSCRIBERS_CREATED"]):
             logger.info(f'Not all subscribers were added. - {added_subs}')
 
-        else:
-            blocked_subs = Request().updateSubscribers(to_block)
-            if len(blocked_subs["SUBSCRIBERS_UPDATED"]) != len(to_block):
-                send_error_email('Fail to block all subscribers.', blocked_subs)
-                logger.info(f'Fail to block all subscribers - {blocked_subs}')
+        # else:
+        #     blocked_subs = Request().updateSubscribers(to_block)
+        #     if len(blocked_subs["SUBSCRIBERS_UPDATED"]) != len(to_block):
+        #         send_error_email('Fail to block all subscribers.', blocked_subs)
+        #         logger.info(f'Fail to block all subscribers - {blocked_subs}')
 
     except Exception as e:
         send_error_email('Error in move subscribers', e.args)
@@ -157,7 +142,7 @@ def moveSubscribers():
 
 # moveSubscribers()
 
-schedule.every().sunday.at(MOVING_TIME).do(moveSubscribers)
+schedule.every().saturday.at(MOVING_TIME).do(moveSubscribers)
 
 while True:
     if STATUS == "ON":
