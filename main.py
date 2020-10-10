@@ -142,7 +142,7 @@ def moveSubscribers():
 
 # moveSubscribers()
 
-schedule.every().saturday.at(MOVING_TIME).do(moveSubscribers)
+schedule.every().sunday.at(MOVING_TIME).do(moveSubscribers)
 
 while True:
     if STATUS == "ON":
